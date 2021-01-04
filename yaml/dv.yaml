@@ -1,0 +1,20 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  annotations:
+    field.cattle.io/description: yuhang-for-test
+  labels:
+    yuhang-for-test: yuhang-for-test
+  name: yuhang-for-test
+  namespace: default
+spec:
+  source:
+    blank: {}
+  pvc:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+    volumeMode: Filesystem
+    storageClassName: longhorn

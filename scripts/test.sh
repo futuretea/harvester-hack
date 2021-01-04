@@ -2,7 +2,7 @@
 [[ -n $DEBUG ]] && set -x
 set -eou pipefail
 
-useage() {
+usage() {
     cat <<HELP
 USAGE:
     test.sh
@@ -15,12 +15,12 @@ exit_err() {
 }
 
 if [ $# -lt 0 ]; then
-    useage
+    usage
     exit 1
 fi
 
 GIT_ROOT_DIR=$(git rev-parse --show-toplevel)
-ROOT_DIR=${3:-$GIT_ROOT_DIR}
+ROOT_DIR=$GIT_ROOT_DIR
 
 mkdir -p "${ROOT_DIR}/dist"
 echo  "Running unit tests"
