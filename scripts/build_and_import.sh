@@ -43,4 +43,4 @@ docker save "$IMAGE_NAME" -o "$TAR_NAME"
 # import image
 scp ./"$TAR_NAME" "${SSH_HOST}":/tmp
 ssh "$SSH_HOST" "$IMPORT_CMD" /tmp/"$TAR_NAME"
-kubectl set image deployment/"$BIN_NAME" apiserver="$IMAGE_NAME"
+kubectl -n harvester-system set image deployment/"$BIN_NAME" apiserver="$IMAGE_NAME"
