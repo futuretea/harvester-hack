@@ -32,15 +32,20 @@ DOCKER_DIR=${5:-"futuretea/docker"}
 BUILD_SCRIPT=${6:-"./scripts/build"}
 IMPORT_CMD=${7:-"sudo k3s ctr images import"}
 
-
 # build bin
 $BUILD_SCRIPT
+
 # build image
 cd "$DOCKER_DIR"
 cp "$ROOT_DIR/$BIN_DIR/$BIN_NAME" .
 docker build -t "$IMAGE_NAME" .
 docker save "$IMAGE_NAME" -o "$TAR_NAME"
+
 # import image
 scp ./"$TAR_NAME" "${SSH_HOST}":/tmp
 ssh "$SSH_HOST" "$IMPORT_CMD" /tmp/"$TAR_NAME"
-kubectl -n harvester-system set image deployment/"$BIN_NAME" apiserver="$IMAGE_NAME"
+
+# patch deployment
+FIRST_NODE=`kubectl get no --no-headers | head -n 1 | awk '{print $1}'`
+kubectl -n harvester-system patch deploy harvester -p \
+'{"spec":{ "template": {"spec":{" nodeName":"'$FIRST_NODE'", "containers":[{"name":"apiserver","image":"'$IMAGE_NAME'", "imagePullPolicy":"IfNotPresent"}]}}}}'
