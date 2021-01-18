@@ -1,0 +1,7 @@
+apiVersion: harvester.cattle.io/v1alpha1
+kind: VirtualMachineImage
+metadata:
+  name: testimage
+spec:
+  displayName: testimage
+  url: https://download.cirros-cloud.net/0.5.1/cirros-0.5.1-x86_64-disk.img
