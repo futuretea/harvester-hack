@@ -5,7 +5,7 @@ set -eou pipefail
 useage() {
     cat <<HELP
 USAGE:
-    test-installer SSHCONFIG NAME
+    test-installer SSHCONFIG DASHBOARD
 HELP
 }
 
@@ -20,13 +20,14 @@ if [ $# -lt 2 ]; then
 fi
 
 SSHCONFIG=$1
-NAME=$2
+DASHBOARD=$2
+NAME=$(mktemp -u -p /home/rancher)
+TARGET=/opt/start_harvester_console.sh
 
 CGO_ENABLED=0 GOOS=linux go build
-
-ssh-copy-id $SSHCONFIG
-scp harvester-installer $SSHCONFIG:/home/rancher/$NAME
-ssh $SSHCONFIG sudo sed -i "5s:^.*$:/home/rancher/$NAME:" /opt/start_harvester_console.sh
-ssh $SSHCONFIG sudo cat /opt/start_harvester_console.sh
-ssh $SSHCONFIG "sudo kill -9 \$(ps aux | grep start_harvester_console | grep -v grep | awk '{print \$2}')"
+ssh-copy-id "${SSHCONFIG}"
+scp harvester-installer "${SSHCONFIG}":"${NAME}"
+ssh "${SSHCONFIG}" sudo sed -i "5s:^.*$:${NAME}:" "${TARGET}"
+ssh "${SSHCONFIG}" sudo sed -i "s/HARVESTER_DASHBOARD=.*$/HARVESTER_DASHBOARD=$DASHBOARD/" "${TARGET}"
+ssh "${SSHCONFIG}" "sudo kill -9 \$(ps aux | grep start_harvester_console | grep -v grep | awk '{print \$2}')"
 
