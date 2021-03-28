@@ -21,13 +21,31 @@ fi
 
 SSHCONFIG=$1
 DASHBOARD=$2
-NAME=$(mktemp -u -p /home/rancher)
-TARGET=/opt/start_harvester_console.sh
+
+mode_file=/opt/harvester-mode
+start_script_dir=/usr/bin
+remote_temp_dir=/home/rancher
+local_temp_dir=/tmp
+start_script_name=start-harvester-console.sh
+replace_script_name=replace-harvester-console.sh
+
+start_script="${start_script_dir}/${start_script_name}"
+start_script_temp="${remote_temp_dir}/${start_script_name}"
+local_script_temp="${local_temp_dir}/${replace_script_name}"
+bin_name=harvester-installer
+bin_name_temp=$(mktemp -u -p "${remote_temp_dir}" -t XXXXX.harvester-console)
 
 CGO_ENABLED=0 GOOS=linux go build
-ssh-copy-id "${SSHCONFIG}"
-scp harvester-installer "${SSHCONFIG}":"${NAME}"
-ssh "${SSHCONFIG}" sudo sed -i "5s:^.*$:${NAME}:" "${TARGET}"
-ssh "${SSHCONFIG}" sudo sed -i "s/HARVESTER_DASHBOARD=.*$/HARVESTER_DASHBOARD=$DASHBOARD/" "${TARGET}"
-ssh "${SSHCONFIG}" "sudo kill -9 \$(ps aux | grep start_harvester_console | grep -v grep | awk '{print \$2}')"
 
+ssh-copy-id "${SSHCONFIG}"
+
+scp "${bin_name}" "${SSHCONFIG}":"${bin_name_temp}"
+
+cat >"${local_script_temp}" << EEOOFF
+sudo sed -i "s/HARVESTER_DASHBOARD=.*$/HARVESTER_DASHBOARD=$DASHBOARD/" "${mode_file}"
+sudo sed "s:^.*harvester-console$:${bin_name_temp}:" ${start_script} > "${start_script_temp}"
+sudo kill -9 \$(ps aux | grep start-harvester-console | grep -v grep | awk '{print \$2}')
+EEOOFF
+
+scp "${local_script_temp}" "${SSHCONFIG}":${local_script_temp}
+ssh "${SSHCONFIG}" sudo bash -x ${local_script_temp}
